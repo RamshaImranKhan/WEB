@@ -9,23 +9,19 @@
   <link rel="stylesheet" href="styles.css" />
 
   <style>
-    .menu-item {
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin: 10px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    .menu-item img {
-      max-width: 100px;
-      margin-bottom: 10px;
-    }
     .menu-item button {
       margin: 5px;
-      padding: 5px 10px;
+      padding: 8px 15px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      color: white;
+    }
+    .menu-item button:first-of-type {
+      background-color: #0d6efd;
+    }
+    .menu-item button:last-of-type {
+      background-color: #dc3545;
     }
     .menu-item button:hover {
       opacity: 0.8;
@@ -45,6 +41,31 @@
       border-radius: 10px;
       width: 320px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    #add-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+    #add-form input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      flex: 1;
+      min-width: 150px;
+    }
+    #add-form button {
+      padding: 8px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #add-form button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
@@ -83,7 +104,7 @@
       <h3>Add New Menu Item</h3>
       <form id="add-form">
         <input type="text" id="title" placeholder="Title" required />
-        <input type="number" id="price" placeholder="Price" required />
+        <input type="number" id="price" placeholder="Price" step="0.01" required />
         <input type="text" id="description" placeholder="Description" required />
         <button type="submit">Add Item</button>
       </form>
@@ -124,98 +145,170 @@
   </div>
 
   <script>
-  const API_URL = "https://jsonplaceholder.typicode.com/posts";
-  let currentItems = [];
+const API_URL = 'https://jsonplaceholder.typicode.com/posts';
 
-  async function fetchMenu() {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
+let currentItems = [];
 
-      currentItems = data.slice(0, 10).map(item => ({
-        id: item.id,
-        title: item.title,
-        body: item.body.substring(0, 60),
-        price: (Math.random() * 5 + 2).toFixed(2)
-      }));
+async function fetchMenu() {
+  try {
+    console.log("📡 Sending GET request...");
+    const response = await fetch(API_URL);
+    const data = await response.json();
 
-      renderMenu(currentItems);
-    } catch (error) {
-      console.error("Error fetching menu:", error);
-    }
+    currentItems = data.slice(0, 10).map(item => ({
+      id: item.id,
+      title: item.title,
+      body: item.body.substring(0, 60),
+      price: (Math.random() * 5 + 2).toFixed(2)
+    }));
+
+    console.log(" GET Response:", currentItems);
+    renderMenu(currentItems);
+  } catch (error) {
+    console.error(" Error fetching menu:", error);
   }
+}
 
-  function renderMenu(items) {
-    const menuList = document.getElementById("menu-list");
-    menuList.innerHTML = "";
+function renderMenu(items) {
+  const menuList = document.getElementById("menu-list");
+  menuList.innerHTML = "";
 
-    items.forEach(item => {
-      const div = document.createElement("div");
-      div.classList.add("menu-item");
-      div.setAttribute("data-id", item.id);
-      div.innerHTML = `
-        <h4>${item.title}</h4>
-        <p>${item.body}</p>
-        <p><strong>$${item.price}</strong></p>
-        <button onclick="updateMenu(${item.id})">Update</button>
-        <button onclick="deleteMenu(${item.id})">Delete</button>
-      `;
-      menuList.appendChild(div);
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.classList.add("menu-item");
+    div.setAttribute("data-id", item.id);
+    div.innerHTML = `
+      <h4>${item.title}</h4>
+      <p>${item.body}</p>
+      <p><strong>$${item.price}</strong></p>
+      <button onclick="updateMenu(${item.id})">Update</button>
+      <button onclick="deleteMenu(${item.id})">Delete</button>
+    `;
+    menuList.appendChild(div);
+  });
+}
+
+document.getElementById("add-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const newItem = {
+    title: document.getElementById("title").value,
+    body: document.getElementById("description").value,
+    userId: 1
+  };
+
+  try {
+    console.log("📡 Sending POST request...", newItem);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newItem)
     });
-  }
 
-  document.getElementById("add-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const newItem = {
-      id: Date.now(),
-      title: document.getElementById("title").value,
-      body: document.getElementById("description").value,
+    const data = await response.json();
+    console.log("✅ POST Response:", data);
+
+    currentItems.push({
+      id: data.id,
+      title: data.title,
+      body: data.body,
       price: document.getElementById("price").value
-    };
-    currentItems.push(newItem);
+    });
+
     renderMenu(currentItems);
     document.getElementById("add-form").reset();
-  });
-
-  function updateMenu(id) {
-    const modal = document.getElementById("updateModal");
-    modal.style.display = "flex";
-
-    const item = currentItems.find(i => i.id === id);
-    if (item) {
-      document.getElementById("updateId").value = id;
-      document.getElementById("updateTitle").value = item.title;
-      document.getElementById("updateDescription").value = item.body;
-      document.getElementById("updatePrice").value = item.price;
-    }
+    alert("Item added successfully!");
+  } catch (error) {
+    console.error(" Error adding item:", error);
   }
+});
 
-  document.getElementById("updateForm").addEventListener("submit", (e) => {
-    e.preventDefault();
 
-    const id = parseInt(document.getElementById("updateId").value);
-    const updated = {
-      id,
-      title: document.getElementById("updateTitle").value,
-      body: document.getElementById("updateDescription").value,
-      price: document.getElementById("updatePrice").value
-    };
+function updateMenu(id) {
+  const modal = document.getElementById("updateModal");
+  modal.style.display = "flex";
 
-    currentItems = currentItems.map(item => (item.id === id ? updated : item));
+  const item = currentItems.find(i => i.id === id);
+  if (item) {
+    document.getElementById("updateId").value = id;
+    document.getElementById("updateTitle").value = item.title;
+    document.getElementById("updateDescription").value = item.body;
+    document.getElementById("updatePrice").value = item.price;
+  }
+}
+
+document.getElementById("updateForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const id = parseInt(document.getElementById("updateId").value);
+  const updatedItem = {
+    id: id,
+    title: document.getElementById("updateTitle").value,
+    body: document.getElementById("updateDescription").value,
+    userId: 1
+  };
+
+  try {
+    console.log("📡 Sending PUT request...", updatedItem);
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedItem)
+    });
+
+    const data = await response.json();
+    console.log("✅ PUT Response:", data);
+
+    currentItems = currentItems.map(item => 
+      item.id === id ? {
+        ...item,
+        title: updatedItem.title,
+        body: updatedItem.body,
+        price: document.getElementById("updatePrice").value
+      } : item
+    );
+
     renderMenu(currentItems);
     document.getElementById("updateModal").style.display = "none";
-  });
+    alert("Item updated successfully!");
+  } catch (error) {
+    console.error(" Error updating item:", error);
+  }
+});
 
-  document.getElementById("cancelUpdate").addEventListener("click", () => {
-    document.getElementById("updateModal").style.display = "none";
-  });
+document.getElementById("cancelUpdate").addEventListener("click", () => {
+  document.getElementById("updateModal").style.display = "none";
+});
 
-  function deleteMenu(id) {
+
+async function deleteMenu(id) {
+  if (!confirm("Are you sure you want to delete this item?")) {
+    return;
+  }
+
+  try {
+    console.log("📡 Sending DELETE request for id:", id);
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE'
+    });
+
+    console.log("DELETE Response:", response.status);
+
     currentItems = currentItems.filter(item => item.id !== id);
     renderMenu(currentItems);
+    alert("Item deleted successfully!");
+  } catch (error) {
+    console.error(" Error deleting item:", error);
   }
+}
 
-  document.addEventListener("DOMContentLoaded", fetchMenu);
-  </script>
+
+document.addEventListener("DOMContentLoaded", fetchMenu);
+</script>
+
 </body>
 </html>
