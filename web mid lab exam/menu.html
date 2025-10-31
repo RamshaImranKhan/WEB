@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Becoffee</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    .menu-item button {
+      margin: 5px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+    .menu-item button:first-of-type {
+      background-color: #0d6efd;
+    }
+    .menu-item button:last-of-type {
+      background-color: #dc3545;
+    }
+    .menu-item button:hover {
+      opacity: 0.8;
+    }
+    #updateModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #updateModal .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      width: 320px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    #add-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+    #add-form input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      flex: 1;
+      min-width: 150px;
+    }
+    #add-form button {
+      padding: 8px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #add-form button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav-left">
+        <a href="Menu.html">Menu</a>
+        <a href="gallery.html">Gallery</a>
+      </div>
+      <div class="logo">
+        <img src="https://themes.muffingroup.com/be/coffee/wp-content/uploads/2015/01/retina-coffee.png" alt="Becoffee Logo" />
+      </div>
+      <div class="nav-right">
+        <a href="Contact.html">Contact</a>
+        <a href="checkout.html" class="buy-now">Buy Now</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="menu">
+      <h11>Menu</h11>
+    </section>
+
+    <div class="our cofees">
+      <img src="https://themes.muffingroup.com/be/coffee/wp-content/uploads/2015/01/home_coffee_subheader.png" alt="our coffees"/>
+      <h13>Our Coffees</h13>
+      <img src="https://themes.muffingroup.com/be/coffee/wp-content/uploads/2015/01/home_coffee_heading.png" alt="sign"/>
+    </div>
+
+    <div id="menu-list" class="container d-flex flex-wrap justify-content-center"></div>
+
+    <section class="container my-5">
+      <h3>Add New Menu Item</h3>
+      <form id="add-form">
+        <input type="text" id="title" placeholder="Title" required />
+        <input type="number" id="price" placeholder="Price" step="0.01" required />
+        <input type="text" id="description" placeholder="Description" required />
+        <button type="submit">Add Item</button>
+      </form>
+    </section>
+  </main>
+
+  <section class="bon-apetite">
+    <p10>Bon appetit!</p10>
+  </section>
+
+  <footer>
+    <div class="footer">
+      <p>© 2025 Betheme by Muffin group | All Rights Reserved | Powered by WordPress.</p>
+    </div>
+  </footer>
+
+  <div id="updateModal">
+    <div class="modal-content">
+      <h4>Update Menu Item</h4>
+      <form id="updateForm">
+        <input type="hidden" id="updateId" />
+        <div class="mb-2">
+          <label>Title</label>
+          <input type="text" id="updateTitle" class="form-control" required />
+        </div>
+        <div class="mb-2">
+          <label>Description</label>
+          <input type="text" id="updateDescription" class="form-control" required />
+        </div>
+        <div class="mb-2">
+          <label>Price ($)</label>
+          <input type="number" id="updatePrice" class="form-control" required min="1" step="0.01" />
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Save Changes</button>
+        <button type="button" class="btn btn-secondary mt-2" id="cancelUpdate">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+const API_URL = 'https://jsonplaceholder.typicode.com/posts';
+
+let currentItems = [];
+
+async function fetchMenu() {
+  try {
+    console.log("📡 Sending GET request...");
+    const response = await fetch(API_URL);
+    const data = await response.json();
+
+    currentItems = data.slice(0, 10).map(item => ({
+      id: item.id,
+      title: item.title,
+      body: item.body.substring(0, 60),
+      price: (Math.random() * 5 + 2).toFixed(2)
+    }));
+
+    console.log(" GET Response:", currentItems);
+    renderMenu(currentItems);
+  } catch (error) {
+    console.error(" Error fetching menu:", error);
+  }
+}
+
+function renderMenu(items) {
+  const menuList = document.getElementById("menu-list");
+  menuList.innerHTML = "";
+
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.classList.add("menu-item");
+    div.setAttribute("data-id", item.id);
+    div.innerHTML = `
+      <h4>${item.title}</h4>
+      <p>${item.body}</p>
+      <p><strong>$${item.price}</strong></p>
+      <button onclick="updateMenu(${item.id})">Update</button>
+      <button onclick="deleteMenu(${item.id})">Delete</button>
+    `;
+    menuList.appendChild(div);
+  });
+}
+
+document.getElementById("add-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const newItem = {
+    title: document.getElementById("title").value,
+    body: document.getElementById("description").value,
+    userId: 1
+  };
+
+  try {
+    console.log("📡 Sending POST request...", newItem);
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newItem)
+    });
+
+    const data = await response.json();
+    console.log("✅ POST Response:", data);
+
+    currentItems.push({
+      id: data.id,
+      title: data.title,
+      body: data.body,
+      price: document.getElementById("price").value
+    });
+
+    renderMenu(currentItems);
+    document.getElementById("add-form").reset();
+    alert("Item added successfully!");
+  } catch (error) {
+    console.error(" Error adding item:", error);
+  }
+});
+
+
+function updateMenu(id) {
+  const modal = document.getElementById("updateModal");
+  modal.style.display = "flex";
+
+  const item = currentItems.find(i => i.id === id);
+  if (item) {
+    document.getElementById("updateId").value = id;
+    document.getElementById("updateTitle").value = item.title;
+    document.getElementById("updateDescription").value = item.body;
+    document.getElementById("updatePrice").value = item.price;
+  }
+}
+
+document.getElementById("updateForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const id = parseInt(document.getElementById("updateId").value);
+  const updatedItem = {
+    id: id,
+    title: document.getElementById("updateTitle").value,
+    body: document.getElementById("updateDescription").value,
+    userId: 1
+  };
+
+  try {
+    console.log("📡 Sending PUT request...", updatedItem);
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedItem)
+    });
+
+    const data = await response.json();
+    console.log("✅ PUT Response:", data);
+
+    currentItems = currentItems.map(item => 
+      item.id === id ? {
+        ...item,
+        title: updatedItem.title,
+        body: updatedItem.body,
+        price: document.getElementById("updatePrice").value
+      } : item
+    );
+
+    renderMenu(currentItems);
+    document.getElementById("updateModal").style.display = "none";
+    alert("Item updated successfully!");
+  } catch (error) {
+    console.error(" Error updating item:", error);
+  }
+});
+
+document.getElementById("cancelUpdate").addEventListener("click", () => {
+  document.getElementById("updateModal").style.display = "none";
+});
+
+
+async function deleteMenu(id) {
+  if (!confirm("Are you sure you want to delete this item?")) {
+    return;
+  }
+
+  try {
+    console.log("📡 Sending DELETE request for id:", id);
+    const response = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE'
+    });
+
+    console.log("DELETE Response:", response.status);
+
+    currentItems = currentItems.filter(item => item.id !== id);
+    renderMenu(currentItems);
+    alert("Item deleted successfully!");
+  } catch (error) {
+    console.error(" Error deleting item:", error);
+  }
+}
+
+
+document.addEventListener("DOMContentLoaded", fetchMenu);
+</script>
+
+</body>
+</html>
