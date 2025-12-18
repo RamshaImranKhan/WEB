@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Becoffee | Cart</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="site/styles.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav-left">
+        <a href="/">Home</a>
+        <a href="/menu">Menu</a>
+        <a href="/gallery">Gallery</a>
+      </div>
+      <div class="logo">
+        <a href="/">
+          <img src="https://themes.muffingroup.com/be/coffee/wp-content/uploads/2015/01/retina-coffee.png"
+            alt="Becoffee Logo" />
+        </a>
+      </div>
+      <div class="nav-right">
+        <a href="/contact">Contact</a>
+        <a href="/cart" class="cart-link">Cart <span class="cart-badge" style="display: none;">0</span></a>
+        <a href="/login" id="userBadge">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container py-5">
+    <div class="mb-4">
+      <h2>Your Shopping Cart</h2>
+      <p class="text-muted mb-3">Review your items before checkout</p>
+      <a href="/menu" class="btn btn-outline-dark">Continue Shopping</a>
+    </div>
+
+    <div id="cartContainer"></div>
+
+    <div id="checkoutSection" class="mt-4" style="display: none;">
+      <div class="d-flex justify-content-end">
+        <a href="/checkout" class="btn btn-dark btn-lg">Proceed to Checkout</a>
+      </div>
+    </div>
+
+
+    <div class="mt-5 pt-4 border-top">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3>Add More Items</h3>
+          <p class="text-muted mb-0">Browse our delicious selection</p>
+        </div>
+        <a href="/menu" class="btn btn-outline-dark">View Full Menu</a>
+      </div>
+      <div id="productsContainer" class="product-grid"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="row">
+      <div class="le">
+        <h9>Bibendum auctor</h9>
+        <p>
+          Sed ut imperdiet nisi. Proin condimentum fermentum nunc. Etiam pharetra, erat sed fermentum feugiat, velit
+          mauris egestas quam, ut aliquam massa nisl quis neque.
+        </p>
+      </div>
+      <div class="mi">
+        <h9>Aliquam erat</h9>
+        <p>
+          Proin gravida nibh vel velit auctor aliquet. Aenean sollicitudin, lorem quis bibendum auctor, nisi elit
+          consequat ipsum, nec sagittis sem nibh id elit. Duis sed odio sit amet.
+        </p>
+      </div>
+      <div class="ri">
+        <h9>Nullam wisi</h9>
+        <p>
+          Nullam viverra consectetuer. Quisque cursus et, porttitor risus. Aliquam sem. In hendrerit nulla quam nunc,
+          accumsan congue. Lorem ipsum primis in nibh vel risus. Sed vel lectus.
+        </p>
+      </div>
+    </div>
+
+
+
+
+
+    <script src="site/app.js"></script>
+    <script>
+
+      hydrateUserBadge('userBadge');
+      updateCartBadge();
+
+
+      function renderCartWithCheckout() {
+        const cart = storage.getCart();
+        renderCart('cartContainer');
+
+
+        const checkoutSection = document.getElementById('checkoutSection');
+        if (cart && cart.length > 0) {
+          checkoutSection.style.display = 'block';
+        } else {
+          checkoutSection.style.display = 'none';
+        }
+        updateCartBadge();
+      }
+
+
+      async function loadProducts() {
+        const container = document.getElementById('productsContainer');
+        if (!container) return;
+
+        container.innerHTML = '<p class="text-center">Loading products...</p>';
+
+        try {
+          const products = await api('/products');
+
+          if (!products || products.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">No products available at the moment.</p>';
+            return;
+          }
+
+          container.innerHTML = products
+            .map(
+              (p) => `<div class="product-card">
+              ${p.image ? `<img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/200'" />` : '<div style="height: 200px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">No Image</div>'}
+              <div>
+                <h5>${p.name || 'Product'}</h5>
+                <p class="text-muted small">${p.description || 'Delicious item'}</p>
+                ${p.category ? `<span class="badge bg-secondary">${p.category}</span>` : ''}
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <span class="fw-bold text-primary">$${(p.price || 0).toFixed(2)}</span>
+                <div class="d-flex align-items-center">
+                  <input type="number" class="form-control form-control-sm me-2" style="width: 60px;" min="1" value="1" id="qty-${p._id}" />
+                  <button class="btn btn-sm btn-dark" data-id="${p._id}" onclick="addProductToCart('${p._id}')">Add</button>
+                </div>
+              </div>
+            </div>`
+            )
+            .join('');
+
+
+          window.productsList = products;
+        } catch (err) {
+          console.error('Failed to load products:', err);
+          container.innerHTML = `<p class="text-danger text-center">Failed to load products: ${err.message}</p>`;
+        }
+      }
+
+
+      window.addProductToCart = function (productId) {
+        if (!window.productsList) {
+          showNotification('Products not loaded yet. Please wait...', 'info');
+          return;
+        }
+
+        const product = window.productsList.find((p) => p._id === productId);
+        if (!product) {
+          showNotification('Product not found', 'error');
+          return;
+        }
+
+        const qtyInput = document.getElementById(`qty-${productId}`);
+        const quantity = parseInt(qtyInput?.value) || 1;
+
+        addToCart(product, quantity);
+
+
+        renderCartWithCheckout();
+
+
+        if (qtyInput) qtyInput.value = 1;
+      };
+
+
+      renderCartWithCheckout();
+      loadProducts();
+
+
+      document.addEventListener('DOMContentLoaded', () => {
+
+        window.addEventListener('cartUpdated', renderCartWithCheckout);
+
+
+        setInterval(() => {
+          const cart = storage.getCart();
+          const checkoutSection = document.getElementById('checkoutSection');
+          if (cart && cart.length > 0 && checkoutSection.style.display === 'none') {
+            renderCartWithCheckout();
+          }
+        }, 1000);
+      });
+    </script>
+</body>
+
+</html>
