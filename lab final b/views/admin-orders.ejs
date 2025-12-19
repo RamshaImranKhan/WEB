@@ -1,0 +1,51 @@
+<h1>Manage Orders</h1>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% orders.forEach(order=> { %>
+                <tr>
+                    <td>
+                        <%= order.orderNumber %>
+                    </td>
+                    <td>
+                        <%= order.user ? order.user.email : 'Guest' %>
+                    </td>
+                    <td>
+                        <%= new Date(order.createdAt).toLocaleDateString() %>
+                    </td>
+                    <td>$<%= order.totalAmount.toFixed(2) %>
+                    </td>
+                    <td>
+                        <span
+                            class="badge bg-<%= order.orderStatus === 'Placed' ? 'primary' : (order.orderStatus === 'Processing' ? 'warning' : (order.orderStatus === 'Delivered' ? 'success' : 'secondary')) %>">
+                            <%= order.orderStatus %>
+                        </span>
+                    </td>
+                    <td>
+                        <form action="/api/admin/order/update-status" method="POST" class="d-flex align-items-center">
+                            <input type="hidden" name="orderId" value="<%= order._id %>">
+                            <select name="status" class="form-select form-select-sm me-2">
+                                <option value="Processing" <%=order.orderStatus==='Placed' ? '' : 'disabled' %>
+                                    >Processing</option>
+                                <option value="Delivered" <%=order.orderStatus==='Processing' ? '' : 'disabled' %>
+                                    >Delivered</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-dark">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                <% }) %>
+        </tbody>
+    </table>
+</div>

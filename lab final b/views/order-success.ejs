@@ -1,0 +1,23 @@
+<div class="text-center mt-5">
+    <h1 class="text-success display-4">Order Placed Successfully!</h1>
+    <p class="lead">Thank you for your purchase.</p>
+
+    <div class="card mx-auto mt-4" style="max-width: 600px;">
+        <div class="card-body">
+            <h5 class="card-title">Order Summary</h5>
+            <p><strong>Order Number:</strong>
+                <%= order.orderNumber %>
+            </p>
+            <p><strong>Total Amount:</strong> $<%= order.totalAmount.toFixed(2) %>
+            </p>
+            <p><strong>Status:</strong> <span class="badge bg-primary">
+                    <%= order.orderStatus %>
+                </span></p>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="/" class="btn btn-primary">Continue Shopping</a>
+        <a href="/my-orders" class="btn btn-outline-secondary">View My Orders</a>
+    </div>
+</div>
